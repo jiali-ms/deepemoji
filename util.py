@@ -3,6 +3,11 @@ import os
 import pickle
 from tqdm import tqdm
 from collections import defaultdict
+import numpy as np
+from glob import glob
+
+from keras.utils import to_categorical
+
 
 CORPUS_PATH = os.path.join('data', 'corpus.txt')
 LEXICON_PATH = os.path.join('data', 'lexicon.pkl')
@@ -19,6 +24,20 @@ def is_emoji(word):
         return True
     else:
         return False
+
+def build_corpus_from_pkl():
+    lines = []
+    files = glob('data/*_en.pkl')
+    print('%d files laoded' % len(files))
+    for file in files:
+        temp = pickle.load(open(file, 'rb'))
+        print('%s %d' % (file , len(temp)))
+        lines += temp
+
+    print('%d lines total' % len(lines))
+    with open(CORPUS_PATH, 'w', encoding='utf-8') as f:
+        for line in tqdm(lines):
+            f.write(' '.join(line) + '\n')
 
 def build_lexicon():
     """ Build lexicon from the corpus. Assume the corpus is a text file with each sentence per line and
@@ -48,5 +67,76 @@ def build_lexicon():
     pickle.dump(sorted_lexicon, open(LEXICON_PATH, 'wb'))
     pickle.dump(sorted_emoji_lexicon, open(EMOJI_LEXICON_PATH, 'wb'))
 
+def split_corpus(shuffle=True):
+    with open(CORPUS_PATH, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+        if shuffle:
+            np.random.shuffle(lines)
+        N = len(lines)
+        train_split = 0.8
+        dev_split = 0.9
+        train = lines[:int(N*train_split)]
+        dev = lines[int(N*train_split):int(N*dev_split)]
+        test = lines[int(N*dev_split):]
+
+    def dump_corpus(lines, path):
+        with open(path, 'w', encoding='utf-8') as f:
+            #for line in lines:
+            f.writelines(lines)
+
+    dump_corpus(train, os.path.join('data', 'train.txt'))
+    dump_corpus(dev, os.path.join('data', 'dev.txt'))
+    dump_corpus(test, os.path.join('data', 'test.txt'))
+
+def data_generator(raw_data, batch_size, num_steps, n_classes):
+    X, Y = raw_data
+    data_len = len(X)
+    batch_len = data_len // batch_size
+    data_x = np.zeros([batch_size, batch_len], dtype=np.int32)
+    data_y = np.zeros([batch_size, batch_len, n_classes], dtype=np.int32)
+    for i in range(batch_size):
+        data_x[i] = X[batch_len * i:batch_len * (i + 1)]
+        data_y[i, :, :] = to_categorical(Y[batch_len * i:batch_len * (i + 1)], num_classes=n_classes)
+    epoch_size = batch_len // num_steps
+    if epoch_size == 0:
+        raise ValueError("epoch_size == 0, decrease batch_size or num_steps")
+
+    while True:
+        for i in range(epoch_size):
+            x = data_x[:, i * num_steps:(i + 1) * num_steps]
+            y = data_y[:, i * num_steps:(i + 1) * num_steps]
+            yield (x, y)
+
+def generator_y_true(raw_data, batch_size, num_steps, n_classes):
+    X, Y = raw_data
+    data_len = len(X)
+    batch_len = data_len // batch_size
+    # data_x = np.zeros([batch_size, batch_len], dtype=np.int32)
+    data_y = np.zeros([batch_size, batch_len], dtype=np.int32)
+    for i in range(batch_size):
+        #data_x[i] = X[batch_len * i:batch_len * (i + 1)]
+        data_y[i, :] = Y[batch_len * i:batch_len * (i + 1)]
+
+    epoch_size = batch_len // num_steps
+    if epoch_size == 0:
+        raise ValueError("epoch_size == 0, decrease batch_size or num_steps")
+
+    y_true = []
+
+    for i in range(epoch_size):
+        # x = data_x[:, i * num_steps:(i + 1) * num_steps]
+        y = data_y[:, i * num_steps:(i + 1) * num_steps]
+        y_true.append(y)
+
+    return y_true
+
 if __name__ == "__main__":
+    #x = [10] * 1000
+    #y = list(range(1000))
+    #a = data_generator((x, y), 32, 10, 3)
+    # print(np.array(generator_y_true((x, y), 32, 10, 3)).reshape(-1))
+
+    print('util')
+    # build_corpus_from_pkl()
     build_lexicon()
+    split_corpus()

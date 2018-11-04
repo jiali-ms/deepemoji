@@ -3,7 +3,10 @@ import os
 from tqdm import tqdm
 from util import is_emoji
 
-CORPUS_PATH = os.path.join('data', 'corpus.txt')
+TRAIN_CORPUS_PATH = os.path.join('data', 'train.txt')
+DEV_CORPUS_PATH = os.path.join('data', 'dev.txt')
+TEST_CORPUS_PATH = os.path.join('data', 'test.txt')
+
 LEXICON_PATH = os.path.join('data', 'lexicon.pkl')
 EMOJI_LEXICON_PATH = os.path.join('data', 'lexicon_emoji.pkl')
 
@@ -53,10 +56,9 @@ class Corpus(object):
         self.vocab = vocab
         self.emoji_vocab = emoji_vocab
 
-        self.encoded_train = self._encode_corpus(CORPUS_PATH, debug)
-
-        #self.encoded_dev = self._encode_corpus(DEV_CORPUS_PATH, debug)
-        #self.encoded_test = self._encode_corpus(TEST_CORPUS_PATH, debug)
+        self.encoded_train = self._encode_corpus(TRAIN_CORPUS_PATH, debug)
+        self.encoded_dev = self._encode_corpus(DEV_CORPUS_PATH, debug)
+        self.encoded_test = self._encode_corpus(TEST_CORPUS_PATH, debug)
 
     def _encode_corpus(self, path, debug=False):
         if os.path.exists(path + '.pkl'):
