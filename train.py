@@ -30,7 +30,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
 # load corpus and vocab
 vocab = Vocab(20000) # 20k
-emoji_vocab = EmojiVocab(100)
+emoji_vocab = EmojiVocab(500)
 corpus = Corpus(vocab, emoji_vocab, debug=False)
 
 # train with keras

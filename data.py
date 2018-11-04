@@ -52,12 +52,13 @@ class Vocab(object):
         return len(self.w2i)
 
 class Corpus(object):
-    def __init__(self, vocab, emoji_vocab, debug=False):
+    def __init__(self, vocab, emoji_vocab, debug=False, eval=False):
         self.vocab = vocab
         self.emoji_vocab = emoji_vocab
 
-        self.encoded_train = self._encode_corpus(TRAIN_CORPUS_PATH, debug)
-        self.encoded_dev = self._encode_corpus(DEV_CORPUS_PATH, debug)
+        if not eval:
+            self.encoded_train = self._encode_corpus(TRAIN_CORPUS_PATH, debug)
+            self.encoded_dev = self._encode_corpus(DEV_CORPUS_PATH, debug)
         self.encoded_test = self._encode_corpus(TEST_CORPUS_PATH, debug)
 
     def _encode_corpus(self, path, debug=False):

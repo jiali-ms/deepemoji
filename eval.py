@@ -1,7 +1,7 @@
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", "-m", type=str, default='model_lstm_09_0.573458.h5', help="the model to use in evaluation")
+parser.add_argument("--model", "-m", type=str, default='model_clstm_01_0.585939.h5', help="the model to use in evaluation")
 parser.add_argument("--batch_size", "-bs", type=int, default=512, help="batch size")
 parser.add_argument("--step_size", "-ts", type=int, default=40, help="step size")
 parser.add_argument("--merge_punc", "-mp", action='store_true', help="merge all punctuation in evaluation")
@@ -18,8 +18,8 @@ model = load_model(os.path.join('weight', args.model))
 
 # load corpus and vocab
 vocab = Vocab(20000) # 20k
-emoji_vocab = EmojiVocab(100)
-corpus = Corpus(vocab, emoji_vocab, debug=False)
+emoji_vocab = EmojiVocab(500)
+corpus = Corpus(vocab, emoji_vocab, debug=False, eval=True)
 
 encoded_test = corpus.encoded_test
 
@@ -35,7 +35,7 @@ y_pred = list(y_pred.reshape(-1, len(emoji_vocab)).argmax(axis=1))
 
 assert len(y_true)== len(y_pred)
 
-print('Confusion Matrix')
-print(confusion_matrix(y_true, y_pred))
+# print('Confusion Matrix')
+# print(confusion_matrix(y_true, y_pred))
 print("classification report")
 print(classification_report(y_true, y_pred, target_names=target_names))
