@@ -1,13 +1,16 @@
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", "-m", type=str, default='model_clstm_01_0.585939.h5', help="the model to use in evaluation")
+parser.add_argument("--model", "-m", type=str, default='model_cbilstm_02_0.353676.h5', help="the model to use in evaluation")
 parser.add_argument("--batch_size", "-bs", type=int, default=512, help="batch size")
 parser.add_argument("--step_size", "-ts", type=int, default=40, help="step size")
 parser.add_argument("--merge_punc", "-mp", action='store_true', help="merge all punctuation in evaluation")
 args = parser.parse_args()
 
 import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 from keras.models import load_model
 from util import data_generator, generator_y_true
 from data import Vocab, EmojiVocab, Corpus
@@ -18,7 +21,7 @@ model = load_model(os.path.join('weight', args.model))
 
 # load corpus and vocab
 vocab = Vocab(20000) # 20k
-emoji_vocab = EmojiVocab(500)
+emoji_vocab = EmojiVocab(40)
 corpus = Corpus(vocab, emoji_vocab, debug=False, eval=True)
 
 encoded_test = corpus.encoded_test
