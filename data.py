@@ -2,6 +2,7 @@ import pickle
 import os
 from tqdm import tqdm
 from util import is_emoji
+import pandas as pd
 
 TRAIN_CORPUS_PATH = os.path.join('data', 'train.txt')
 DEV_CORPUS_PATH = os.path.join('data', 'dev.txt')
@@ -10,15 +11,22 @@ TEST_CORPUS_PATH = os.path.join('data', 'test.txt')
 LEXICON_PATH = os.path.join('data', 'lexicon.pkl')
 EMOJI_LEXICON_PATH = os.path.join('data', 'lexicon_emoji.pkl')
 
+
 class EmojiVocab(object):
     """ Emoji vocab is used as y in this task. Also add a blank for cases where no emoji is predicted.
     """
+
     def __init__(self, size):
-        self.lexicon = pickle.load(open(EMOJI_LEXICON_PATH, 'rb'))[:size]
+        # self.lexicon = pickle.load(open(EMOJI_LEXICON_PATH, 'rb'))[:size]
+        df = pd.read_csv("data/emoji_selected.txt", names=["emoji", "a", "b", "c", "d"])
+        print(df)
+        self.lexicon = df["emoji"].tolist()
+        print(self.lexicon)
+        self.lexicon = [(lexicon_i, i) for i, lexicon_i in enumerate(self.lexicon)]
         self.lexicon = [('<blank>', 0)] + self.lexicon
         self.w2i = {x[0]: i for i, x in enumerate(self.lexicon)}
         self.i2w = {v: k for k, v in self.w2i.items()}
-        print('emoji vocab with size {} loaded'.format(size))
+        print('emoji vocab with size {} loaded'.format(len(self.w2i)))
 
     def encode(self, emoji):
         return self.w2i[emoji]
@@ -29,12 +37,13 @@ class EmojiVocab(object):
     def __len__(self):
         return len(self.w2i)
 
+
 class Vocab(object):
     def __init__(self, size):
         self.lexicon = pickle.load(open(LEXICON_PATH, 'rb'))[:size]
         self.lexicon = [('<unk>', 0)] + [('<eos>', 1)] + self.lexicon
-        self.w2i = {x[0]:i for i, x in enumerate(self.lexicon)}
-        self.i2w = {v:k for k,v in self.w2i.items()}
+        self.w2i = {x[0]: i for i, x in enumerate(self.lexicon)}
+        self.i2w = {v: k for k, v in self.w2i.items()}
         print('vocab with size {} loaded'.format(size))
 
     def encode(self, token):
@@ -51,22 +60,23 @@ class Vocab(object):
     def __len__(self):
         return len(self.w2i)
 
+
 class Corpus(object):
     def __init__(self, vocab, emoji_vocab, debug=False, eval=False):
         self.vocab = vocab
         self.emoji_vocab = emoji_vocab
 
         if not eval:
-            self.encoded_train = self._encode_corpus(TRAIN_CORPUS_PATH, debug)
-            self.encoded_dev = self._encode_corpus(DEV_CORPUS_PATH, debug)
-        self.encoded_test = self._encode_corpus(TEST_CORPUS_PATH, debug)
+            self.encoded_train = self._encode_corpus(TRAIN_CORPUS_PATH, debug, False)
+            self.encoded_dev = self._encode_corpus(DEV_CORPUS_PATH, debug, False)
+        self.encoded_test = self._encode_corpus(TEST_CORPUS_PATH, debug, False)
 
-    def _encode_corpus(self, path, debug=False):
-        if os.path.exists(path + '.pkl'):
+    def _encode_corpus(self, path, debug=False, recreate_corpus=False):
+        if os.path.exists(path + '.pkl') and not recreate_corpus:
             print('load encoded corpus from dump: %s' % path + '.pkl')
             data = pickle.load(open(path + '.pkl', 'rb'))
             if debug:
-                return (data[0][:1024*1000], data[1][:1024*1000])
+                return data[0][:1024 * 1000], data[1][:1024 * 1000]
             else:
                 return data
 
@@ -76,25 +86,31 @@ class Corpus(object):
         with open(path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             if debug:
-                lines = lines[:1024*1000]
+                lines = lines[:1024 * 1000]
             for line in tqdm(lines):
+                flag = False
                 tokens = line.strip().split(' ')
                 for token in tokens:
-                    if token in self.emoji_vocab.w2i :  # and encoded_y[-1] not in self.emoji_vocab.i2w
-                        # do not support continuous emoji case
-                        encoded_y[-1] = self.emoji_vocab.encode(token)
-                    else:
-                        encoded_x.append(self.vocab.encode(token))
-                        encoded_y.append(self.emoji_vocab.encode('<blank>'))
+                    if token in self.emoji_vocab.w2i and token != "<blank>":
+                        flag = True
+                if flag:
+                    for token in tokens:
+                        if token in self.emoji_vocab.w2i:  # and encoded_y[-1] not in self.emoji_vocab.i2w
+                            # do not support continuous emoji case
+                            encoded_y[-1] = self.emoji_vocab.encode(token)
+                        else:
+                            encoded_x.append(self.vocab.encode(token))
+                            encoded_y.append(self.emoji_vocab.encode('<blank>'))
 
-                encoded_x.append(self.vocab.encode('<eos>'))
-                encoded_y.append(self.emoji_vocab.encode('<blank>'))
+                    encoded_x.append(self.vocab.encode('<eos>'))
+                    encoded_y.append(self.emoji_vocab.encode('<blank>'))
 
         assert len(encoded_y) == len(encoded_x)
-
+        print(len(encoded_x))
         pickle.dump((encoded_x, encoded_y), open(path + '.pkl', 'wb'))
 
         return encoded_x, encoded_y
+
 
 if __name__ == "__main__":
     vocab = Vocab(20000)
