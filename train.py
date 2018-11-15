@@ -5,7 +5,7 @@ parser.add_argument("--batch_size", "-bs", type=int, default=512, help="batch si
 parser.add_argument("--step_size", "-ts", type=int, default=40, help="step size")
 parser.add_argument("--embedding_size", "-es", type=int, default=256, help="embedding size")
 parser.add_argument("--hidden_size", "-hs", type=int, default=128, help="hidden size")
-parser.add_argument("--model", "-m", type=str, default='cbilstm', help="type model name among 'lstm', 'bilstm'")
+parser.add_argument("--model", "-m", type=str, default='clstm', help="type model name among 'lstm', 'bilstm'")
 parser.add_argument("--gpu", "-g", type=int, default=2, help="which gpu to use")
 args = parser.parse_args()
 
@@ -31,7 +31,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 # load corpus and vocab
 vocab = Vocab(20000)  # 20k
-emoji_vocab = EmojiVocab(40)
+emoji_vocab = EmojiVocab(29)
 corpus = Corpus(vocab, emoji_vocab, debug=False)
 
 # train with keras

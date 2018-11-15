@@ -1,7 +1,7 @@
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model", "-m", type=str, default='model_cbilstm_02_0.353676.h5',
+parser.add_argument("--model", "-m", type=str, default='model_clstm_02_0.307200.h5',
                     help="the model to use in evaluation")
 args = parser.parse_args()
 
@@ -21,7 +21,9 @@ emoji_vocab = EmojiVocab(40)
 print(emoji_vocab.w2i.keys())
 # punc_dict = set(['、', '。', '「', '」', '・', '）', '（', '，', '？', '！', '…', '〜', '．', '‐', '『', '』', '―', '：', '“', '”'])
 
-original = "i will always love you <eos> don't want to miss a thing <eos> this is the best gift <eos> happy birthday"
+original = "<eos> on behalf of smartnet. we are very sorry for the inconvenience this causes you. i can assure you " \
+           "that we are analyzing how this issue occurred and ways to completely prevent recurrence in the future. " \
+           "thank you for your patience <eos> "
 input = original.split()
 encoded_input = [vocab.encode(x) for x in input]
 print(encoded_input)
@@ -36,7 +38,11 @@ decoded = []
 for i in range(len(encoded_input)):
     decoded.append(vocab.decode(encoded_input[i]))
     # decoded += [emoji_vocab.decode(x) for x in y[i]]
-    decoded += [emoji_vocab.decode(y[i][0])]
+    print(emoji_vocab.decode(y[i][0]))
+    if emoji_vocab.decode(y[i][0]) == "<blank>":
+        decoded += [" "]
+    else:
+        decoded += [emoji_vocab.decode(y[i][0])]
 
 print(original)
 print(''.join(decoded))
